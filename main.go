@@ -52,6 +52,15 @@ func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for invalid characters
+	for _, char := range text {
+		if int(char) < 32 || int(char) > 126 {
+			http.Error(w, "Error 400 Bad Request: Invalid character in input", http.StatusBadRequest)
+			fmt.Printf("Invalid character in input: %v\n", char)
+			return
+		}
+	}
+
 	// Clean up the input string
 	modifiedText := ModifyString(text)
 
@@ -88,7 +97,8 @@ func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 
 func generateAsciiArt(text, banner string) (string, error) {
 	bannerFile := filepath.Join("banners", fmt.Sprintf("%s.txt", banner)) // Determine the file path for the selected banner
-	asciiArt, err := asciiart.AsciiTable(text, bannerFile)                // Generate ASCII art
+	modifiedInput := ModifyString(text)                                   // Clean up the input string
+	asciiArt, err := asciiart.AsciiTable(modifiedInput, bannerFile)       // Generate ASCII art
 	if err != nil {
 		fmt.Printf("Failed to generate ASCII art: %v\n", err)
 		return "", err
