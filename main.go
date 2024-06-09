@@ -35,46 +35,40 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Failed to execute template: %v\n", err)
 	}
 }
-
 func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost { // Ensure the request method is POST
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		fmt.Println("Invalid request method")
+	if r.Method != http.MethodPost {
+		renderErrorPage(w, "Bad Request", "Invalid request method", http.StatusBadRequest)
 		return
 	}
 
-	text := r.FormValue("text")     // Get the text from the form
-	banner := r.FormValue("banner") // Get the banner choice from the form
+	text := r.FormValue("text")
+	banner := r.FormValue("banner")
 
 	if text == "" || banner == "" {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		fmt.Println("Text or banner is empty")
+		renderErrorPage(w, "Bad Request", "Text or banner is empty", http.StatusBadRequest)
 		return
 	}
 
-	// Check for invalid characters
+	// Check for invalid characters, allow \r (13) and \n (10)
 	for _, char := range text {
-		if int(char) < 32 || int(char) > 126 {
-			http.Error(w, "Error 400 Bad Request: Invalid character in input", http.StatusBadRequest)
-			fmt.Printf("Invalid character in input: %v\n", char)
+		if int(char) != 13 && int(char) != 10 && (int(char) < 32 || int(char) > 126) {
+			renderErrorPage(w, "Bad Request", fmt.Sprintf("Invalid character in input: %v", char), http.StatusBadRequest)
 			return
 		}
 	}
 
-	// Clean up the input string
-	modifiedText := ModifyString(text)
+	// Replace \n with an actual newline character
+	text = strings.ReplaceAll(text, "\\n", "\n")
 
-	asciiArt, err := generateAsciiArt(modifiedText, banner) // Generate ASCII art
+	asciiArt, err := generateAsciiArt(text, banner)
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Printf("Failed to generate ASCII art: %v\n", err)
+		renderErrorPage(w, "Internal Server Error", fmt.Sprintf("Failed to generate ASCII art: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	tmpl, err := template.ParseFiles("templates/index.html")
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Printf("Failed to load template: %v\n", err)
+		renderErrorPage(w, "Internal Server Error", fmt.Sprintf("Failed to load template: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -90,8 +84,30 @@ func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.Execute(w, data) // Render the template with the ASCII art
 	if err != nil {
+		renderErrorPage(w, "Internal Server Error", fmt.Sprintf("Failed to execute template: %v", err), http.StatusInternalServerError)
+	}
+}
+
+// renderErrorPage renders the custom error page with a specific message and status code
+func renderErrorPage(w http.ResponseWriter, title, message string, statusCode int) {
+	w.WriteHeader(statusCode)
+	tmpl, err := template.ParseFiles("templates/404.html")
+	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Printf("Failed to execute template: %v\n", err)
+		fmt.Printf("Failed to load error template: %v\n", err)
+		return
+	}
+	data := struct {
+		Title   string
+		Message string
+	}{
+		Title:   title,
+		Message: message,
+	}
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		fmt.Printf("Failed to execute error template: %v\n", err)
 	}
 }
 
