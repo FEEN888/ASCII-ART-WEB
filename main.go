@@ -23,19 +23,28 @@ func main() {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		notFoundHandler(w, r)
+		return
+	}
+
 	tmpl, err := template.ParseFiles("templates/index.html") // Load the HTML template
 	if err != nil {                                          // If there's an error loading the template, handle it
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Printf("Failed to load template: %v\n", err)
+		renderErrorPage(w, "Internal Server Error", fmt.Sprintf("Failed to load template: %v", err), http.StatusInternalServerError)
 		return
 	}
 	err = tmpl.Execute(w, nil) // Render the template and send it to the browser
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Printf("Failed to execute template: %v\n", err)
+		renderErrorPage(w, "Internal Server Error", fmt.Sprintf("Failed to execute template: %v", err), http.StatusInternalServerError)
 	}
 }
+
 func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/ascii-art" {
+		notFoundHandler(w, r)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		renderErrorPage(w, "Bad Request", "Invalid request method", http.StatusBadRequest)
 		return
@@ -49,16 +58,13 @@ func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check for invalid characters, allow \r (13) and \n (10)
+	// Check for invalid characters
 	for _, char := range text {
 		if int(char) != 13 && int(char) != 10 && (int(char) < 32 || int(char) > 126) {
 			renderErrorPage(w, "Bad Request", fmt.Sprintf("Invalid character in input: %v", char), http.StatusBadRequest)
 			return
 		}
 	}
-
-	// Replace \n with an actual newline character
-	text = strings.ReplaceAll(text, "\\n", "\n")
 
 	asciiArt, err := generateAsciiArt(text, banner)
 	if err != nil {
@@ -91,7 +97,8 @@ func asciiArtHandler(w http.ResponseWriter, r *http.Request) {
 // renderErrorPage renders the custom error page with a specific message and status code
 func renderErrorPage(w http.ResponseWriter, title, message string, statusCode int) {
 	w.WriteHeader(statusCode)
-	tmpl, err := template.ParseFiles("templates/404.html")
+	tmplName := fmt.Sprintf("templates/%d.html", statusCode)
+	tmpl, err := template.ParseFiles(tmplName)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		fmt.Printf("Failed to load error template: %v\n", err)
@@ -111,6 +118,10 @@ func renderErrorPage(w http.ResponseWriter, title, message string, statusCode in
 	}
 }
 
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	renderErrorPage(w, "Not Found", "The requested URL was not found on this server.", http.StatusNotFound)
+}
+
 func generateAsciiArt(text, banner string) (string, error) {
 	bannerFile := filepath.Join("banners", fmt.Sprintf("%s.txt", banner)) // Determine the file path for the selected banner
 	modifiedInput := ModifyString(text)                                   // Clean up the input string
@@ -124,5 +135,5 @@ func generateAsciiArt(text, banner string) (string, error) {
 
 func ModifyString(input string) string {
 	// Remove carriage returns and replace newlines with \n
-	return strings.ReplaceAll(strings.ReplaceAll(input, "\r", ""), "\n", "\\n")
+	return strings.ReplaceAll(input, "\r\n", "\n")
 }

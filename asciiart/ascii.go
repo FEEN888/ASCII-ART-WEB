@@ -7,7 +7,7 @@ import (
 )
 
 func AsciiTable(input, filename string) (string, error) {
-	lines := strings.Split(input, "\\n") // Split the input by \n to handle multi-line input
+	lines := strings.Split(input, "\n") // Split the input by \n to handle multi-line input
 	var result strings.Builder
 
 	for i, line := range lines {
@@ -41,14 +41,6 @@ func processLine(line, filename string) (string, error) {
 		lnum = append(lnum, fline)
 	}
 
-	for a := 0; a < len(lnum); a++ {
-		if a+1 < len(lnum) && lnum[a] == 542 && lnum[a+1] == 704 {
-			lnum[a] = 0
-			lnum[a+1] = 0
-		}
-	}
-
-	// Split the lnum array when there are two consecutive zeros
 	var parts [][]int
 	var currentPart []int
 	for _, num := range lnum {
@@ -64,7 +56,6 @@ func processLine(line, filename string) (string, error) {
 	}
 
 	var result strings.Builder
-	// Print each part and send it to the Table function
 	for _, part := range parts {
 		if EqualToZero(part) {
 			result.WriteString("\n")
@@ -84,11 +75,12 @@ func processLine(line, filename string) (string, error) {
 
 func Table(lnum []int, data []byte) (string, error) {
 	var result strings.Builder
-	// Convert file content to string
 	text := string(data)
-	// Split the content into lines
 	lines := strings.Split(text, "\n")
-	// Print the lines corresponding to the line numbers
+	if len(lines) < 9 {
+		return "", fmt.Errorf("banner file does not contain enough lines")
+	}
+
 	for k := 0; k < 8; k++ {
 		for _, lineNum := range lnum {
 			if lineNum != 0 && lineNum-1 < len(lines) {
@@ -100,7 +92,6 @@ func Table(lnum []int, data []byte) (string, error) {
 		if k < 7 {
 			result.WriteString("\n") // Add a newline after each line except the last one
 		}
-		// Increment the line numbers
 		for j := 0; j < len(lnum); j++ {
 			if lnum[j] != 0 {
 				lnum[j]++
@@ -110,7 +101,6 @@ func Table(lnum []int, data []byte) (string, error) {
 	return result.String(), nil
 }
 
-// check if the part is equal to [0], add new
 func EqualToZero(arr []int) bool {
 	if len(arr) != 1 {
 		return false
@@ -118,7 +108,6 @@ func EqualToZero(arr []int) bool {
 	return arr[0] == 0
 }
 
-// check if the last element of the last part is =0, then add new line
 func checkLastElement(arrays [][]int) bool {
 	if len(arrays) == 0 {
 		return false
