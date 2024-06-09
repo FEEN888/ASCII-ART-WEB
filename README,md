@@ -1,0 +1,49 @@
+# ASCII Art Web Generator
+
+## Description
+
+ASCII Art Web Generator is a simple web application that converts user-provided text into ASCII art using different banner styles. This application only accepts English text and treats the `\n` character as a new line.
+
+## Features
+
+- Convert text to ASCII art using three different banner styles: Standard, Shadow, and Thinkertoy.
+- Multiline text input is supported.
+- Responsive and user-friendly web interface.
+
+## Usage
+
+### How to Run
+
+1. Ensure you have the banner files (`standard.txt`, `shadow.txt`, `thinkertoy.txt`) in a `banners` directory inside the project.
+2. Run the server using the following command:
+   ```sh
+   go run main.go
+This will start the server on http://localhost:8080.
+
+# Web Interface
+
+Text Input: Enter the text you want to convert into ASCII art. Only English language characters are allowed.
+
+Banner Selection: Choose one of the available banner styles: Standard, Shadow, or Thinkertoy.
+
+Generate Button: Click the "Generate" button to convert your text to ASCII art.
+New Line Handling: The \n character is considered a new line. Be careful when using it as it will split your text into multiple lines.
+
+Implementation Details
+Algorithm
+The application reads the input text and processes each character based on the selected banner style. It maps each character to its corresponding ASCII art representation by reading from predefined banner files. The generated ASCII art is then displayed on the web interface.
+
+HTTP Endpoints
+GET /: Sends the main HTML page to the client.
+POST /ascii-art: Receives the text and banner style from the client, generates the ASCII art, and displays the result on the page.
+
+Error Handling
+HTTP Status Codes:
+200 OK: Request was successful.
+400 Bad Request: Invalid input, such as unsupported characters.
+500 Internal Server Error: Unexpected errors on the server side.
+
+Authors
+oalshaikh
+zmahdi
+malmannai
